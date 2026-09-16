@@ -1,0 +1,4 @@
+.freebuff/
+.srv.log
+.srv.err
+*.zip

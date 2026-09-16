@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WĐT AI — Bảng Giá & Tâm Lý Thị Trường</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #07090d;
+    --surface: #0d1117;
+    --surface-2: #131a23;
+    --border: rgba(255,255,255,.06);
+    --border-hi: rgba(255,255,255,.12);
+    --text: #eaeef4;
+    --text-2: #b7c1d1;
+    --muted: #7d8899;
+    --gold: #f0b90b;
+    --up: #0ecb81;
+    --down: #f6465d;
+    --flat: #47536b;
+    --up-bg: rgba(14,203,129,.12);
+    --down-bg: rgba(246,70,93,.12);
+    --header-bg: rgba(10,13,18,.72);
+    --bar-bg: #0a0e14;
+    --gauge-track: #1a2230;
+    --scroll: #222b38;
+    --card-shadow: none;
+    --radius: 16px;
+  }
+  /* Theme sáng — phong cách Coinbase: nền trắng, chữ navy đen, card nổi shadow nhẹ */
+  html[data-theme="light"] {
+    --bg: #f7f8fa;
+    --surface: #ffffff;
+    --surface-2: #f0f2f5;
+    --border: rgba(10,11,13,.08);
+    --border-hi: rgba(10,11,13,.18);
+    --text: #0a0b0d;
+    --text-2: #40454e;
+    --muted: #5f6672;
+    --gold: #b8860b;
+    --up: #0b9e63;
+    --down: #d9304e;
+    --flat: #9aa3b2;
+    --up-bg: rgba(11,158,99,.11);
+    --down-bg: rgba(217,48,78,.10);
+    --header-bg: rgba(255,255,255,.82);
+    --bar-bg: #eef0f4;
+    --gauge-track: #e7eaef;
+    --scroll: #d4d9e1;
+    --card-shadow: 0 1px 2px rgba(16,24,40,.05), 0 2px 8px rgba(16,24,40,.07);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--scroll); border-radius: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  /* ===== THEME SWITCH ===== */
+  html[data-theme="light"] .aurora { opacity: .4; }
+  body, header, .sent, .gauge-card, .chip, .sent-bar { transition: background-color .25s ease, color .25s ease, border-color .25s ease; }
+  .theme-btn { cursor: pointer; font-family: inherit; font-size: 14px; line-height: 1; color: var(--text); }
+  .theme-btn:hover { border-color: var(--border-hi); }
+  .theme-btn:active { transform: scale(.94); }
+
+  /* ===== AURORA BACKGROUND ===== */
+  .aurora {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(600px 400px at 12% -5%, rgba(240,185,11,.09), transparent 65%),
+      radial-gradient(700px 500px at 95% 8%, rgba(14,203,129,.07), transparent 60%),
+      radial-gradient(800px 600px at 50% 115%, rgba(153,69,255,.06), transparent 65%);
+  }
+
+  /* ===== HEADER ===== */
+  header {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 28px;
+    background: var(--header-bg);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-mark {
+    width: 34px; height: 34px; border-radius: 10px;
+    background: linear-gradient(135deg, #f0b90b, #d98e04);
+    display: grid; place-items: center;
+    font-size: 15px; font-weight: 800; color: #1a1a1a;
+    box-shadow: 0 4px 16px rgba(240,185,11,.35);
+  }
+  .logo-text { font-size: 19px; font-weight: 800; letter-spacing: .2px; }
+  .logo-text em { font-style: normal; background: linear-gradient(90deg, #f0b90b, #ffd75e); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .logo-sub { font-size: 11px; color: var(--muted); font-weight: 500; margin-top: 1px; }
+
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 12.5px; font-weight: 600; color: var(--muted);
+    padding: 7px 13px; border-radius: 99px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+  }
+  .chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--up); animation: pulse 2s infinite; }
+  .chip.live { color: var(--up); }
+  .chip.off { color: var(--down); }
+  .chip.off .dot { background: var(--down); animation: none; }
+  @keyframes pulse { 0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(14,203,129,.5);} 50% { opacity: .5; box-shadow: 0 0 0 5px rgba(14,203,129,0);} }
+
+  /* ===== LAYOUT ===== */
+  .wrap {
+    position: relative; z-index: 1;
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 22px; max-width: 1440px; margin: 0 auto;
+    padding: 24px 28px 40px;
+  }
+  .panel-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .panel-head h2 {
+    font-size: 15px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--text-2);
+    display: flex; align-items: center; gap: 9px;
+  }
+  .panel-head h2::before {
+    content: ""; width: 4px; height: 16px; border-radius: 2px;
+    background: linear-gradient(180deg, var(--gold), #d98e04);
+  }
+  .panel-head .chip { font-size: 11.5px; padding: 5px 11px; }
+
+  /* ===== LEFT: ASSET CARDS ===== */
+  .asset {
+    display: grid; grid-template-columns: 42px 1fr 116px 128px;
+    align-items: center; gap: 14px;
+    padding: 15px 18px; border-radius: var(--radius);
+    background: var(--surface); border: 1px solid var(--border);
+    margin-bottom: 10px; cursor: pointer; box-shadow: var(--card-shadow);
+    transition: transform .18s ease, border-color .18s ease, background .18s ease, color .25s ease, box-shadow .25s ease;
+  }
+  .asset:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-hi);
+    background: var(--surface-2);
+  }
+  .asset-icon {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 13px; font-weight: 800; color: #fff;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.15), 0 3px 10px rgba(0,0,0,.35);
+  }
+  .asset-icon svg { width: 22px; height: 22px; display: block; }
+  .asset-id strong { display: block; font-size: 14.5px; font-weight: 700; }
+  .asset-id span { font-size: 12px; color: var(--muted); }
+  .asset-id small { display: block; font-size: 10.5px; color: var(--muted); margin-top: 1px; font-variant-numeric: tabular-nums; }
+  .asset-id .sim-badge { font-size: 8.5px; color: var(--gold); border: 1px solid var(--gold); border-radius: 4px; padding: 0 4px; letter-spacing: .5px; font-weight: 600; }
+  .asset-spark { height: 42px; }
+  .asset-spark canvas { width: 100%; height: 100%; display: block; }
+
+  .asset-quote { text-align: right; }
+  .asset-quote .price {
+    font-size: 16.5px; font-weight: 700; font-variant-numeric: tabular-nums;
+    padding: 1px 6px; margin-right: -6px; border-radius: 6px; display: inline-block;
+    transition: color .3s;
+  }
+  .price.flash-up { animation: flashUp .8s ease; }
+  .price.flash-down { animation: flashDown .8s ease; }
+  @keyframes flashUp { 0% { color: var(--up); text-shadow: 0 0 14px rgba(14,203,129,.55); } 100% { color: var(--text); text-shadow: none; } }
+  @keyframes flashDown { 0% { color: var(--down); text-shadow: 0 0 14px rgba(246,70,93,.55); } 100% { color: var(--text); text-shadow: none; } }
+
+  .chg {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 12.5px; font-weight: 700; padding: 3px 9px; border-radius: 7px;
+    margin-top: 4px; font-variant-numeric: tabular-nums;
+  }
+  .chg.up { color: var(--up); background: var(--up-bg); }
+  .chg.down { color: var(--down); background: var(--down-bg); }
+
+  /* ===== RIGHT: SENTIMENT ===== */
+  .gauge-card {
+    position: relative; overflow: hidden;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 22px 22px 18px;
+    margin-bottom: 16px; box-shadow: var(--card-shadow);
+  }
+  .gauge-card::before {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(320px 160px at 50% 0%, rgba(240,185,11,.08), transparent 70%);
+    pointer-events: none;
+  }
+  .gauge-title { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; text-align: center; }
+  .gauge-wrap { display: grid; place-items: center; margin-top: 6px; }
+  .gauge-val {
+    position: absolute; left: 50%; bottom: 34px; transform: translateX(-50%);
+    text-align: center;
+  }
+  .gauge-val b { display: block; font-size: 40px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
+  .gauge-val small { font-size: 12px; font-weight: 600; letter-spacing: .5px; }
+  .gauge-sum { display: flex; justify-content: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .gauge-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 99px;
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .gauge-pill b { color: var(--text); }
+  .gauge-pill i { width: 8px; height: 8px; border-radius: 50%; }
+
+  .sent {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 18px; margin-bottom: 10px; box-shadow: var(--card-shadow);
+    transition: border-color .18s ease, background .18s ease;
+  }
+  .sent:hover { border-color: var(--border-hi); background: var(--surface-2); }
+  .sent-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .sent-id { display: flex; align-items: center; gap: 10px; }
+  .sent-id .mini-ic { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 10px; font-weight: 800; color: #fff; }
+  .mini-ic svg { width: 15px; height: 15px; display: block; }
+  .sent-id b { font-size: 14px; font-weight: 700; }
+  .sent-id span { font-size: 11.5px; color: var(--muted); margin-left: 2px; }
+  .sent-vote { font-size: 11.5px; color: var(--muted); font-weight: 500; }
+
+  .sent-bar {
+    height: 14px; border-radius: 99px; display: flex; overflow: hidden;
+    background: var(--bar-bg); border: 1px solid var(--border); position: relative;
+  }
+  .sent-bar .seg { height: 100%; position: relative; transition: width .8s cubic-bezier(.22,1,.36,1); }
+  .sent-bar .seg.bull { background: linear-gradient(90deg, #09a86a, #0ecb81); }
+  .sent-bar .seg.bear { background: linear-gradient(90deg, #f6465d, #d93a50); }
+  .sent-bar .seg span {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    font-size: 9.5px; font-weight: 700; color: rgba(255,255,255,.92); font-variant-numeric: tabular-nums;
+  }
+
+  .sent-legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); margin-top: 10px; flex-wrap: wrap; }
+  .sent-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sent-legend b { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .sent-legend i { width: 8px; height: 8px; border-radius: 50%; }
+  .i-bull { background: var(--up); } .i-bear { background: var(--down); }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 980px) {
+    .wrap { grid-template-columns: 1fr; padding: 18px 16px 32px; gap: 26px; }
+    header { padding: 12px 16px; }
+  }
+  @media (max-width: 480px) {
+    .asset { grid-template-columns: 40px 1fr 96px; }
+    .asset-spark { display: none; }
+    .logo-sub { display: none; }
+  }
+</style>
+<script>try{if(localStorage.getItem("wdt_theme")==="light")document.documentElement.dataset.theme="light"}catch(e){}</script>
+</head>
+<body>
+
+<div class="aurora"></div>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">₿</div>
+    <div>
+      <div class="logo-text">WĐT <em>AI</em></div>
+      <div class="logo-sub">Bảng giá &amp; tâm lý thị trường</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="chip theme-btn" id="themeBtn" title="Chuyển giao diện sáng/tối" aria-label="Chuyển giao diện sáng/tối">☀️</button>
+    <span class="chip live" id="liveChip"><span class="dot"></span>LIVE · BINANCE</span>
+    <span class="chip" id="clock">--</span>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- LEFT: PRICES -->
+  <section>
+    <div class="panel-head">
+      <h2>Giá thị trường</h2>
+      <span class="chip">Nguồn: Binance API</span>
+    </div>
+    <div id="priceList"></div>
+  </section>
+
+  <!-- RIGHT: SENTIMENT -->
+  <section>
+    <div class="panel-head">
+      <h2>Tâm lý thị trường</h2>
+      <span class="chip" title="Tổng khối lượng lệnh Mua (taker buy) vs Bán trong 24h từ Binance">Dòng lệnh Mua/Bán 24h</span>
+    </div>
+
+    <div class="gauge-card">
+      <div class="gauge-title">Fear &amp; Greed Index <span style="color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0">· alternative.me</span></div>
+      <div class="gauge-wrap">
+        <svg width="240" height="130" viewBox="0 0 240 130">
+          <defs>
+            <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#f6465d"/>
+              <stop offset="50%" stop-color="#f0b90b"/>
+              <stop offset="100%" stop-color="#0ecb81"/>
+            </linearGradient>
+          </defs>
+          <path d="M 24 118 A 96 96 0 0 1 216 118" fill="none" style="stroke: var(--gauge-track)" stroke-width="14" stroke-linecap="round"/>
+          <path id="gaugeArc" d="M 24 118 A 96 96 0 0 1 216 118" fill="none" stroke="url(#gaugeGrad)" stroke-width="14" stroke-linecap="round"
+                stroke-dasharray="301.6" stroke-dashoffset="301.6" style="transition: stroke-dashoffset .9s cubic-bezier(.22,1,.36,1);"/>
+        </svg>
+        <div class="gauge-val">
+          <b id="gaugeNum">—</b>
+          <small id="gaugeLabel" style="color:var(--muted)">ĐANG TÍNH…</small>
+        </div>
+      </div>
+      <div class="gauge-sum">
+        <span class="gauge-pill">Phân loại <b id="gClass">—</b></span>
+        <span class="gauge-pill">BTC 24h <b id="gBtc">—</b></span>
+        <span class="gauge-pill">Cập nhật <b id="gTime">—</b></span>
+      </div>
+    </div>
+
+    <div id="sentimentList"></div>
+  </section>
+</main>
+
+<script>
+/* ================= REAL DATA LAYER =================
+   Giá 5 coin vốn hóa lớn nhất + Vàng (PAXG) : Binance REST, CORS mở
+   Dầu (OIL)                                 : không có nguồn free CORS -> mô phỏng, gắn nhãn rõ
+   Fear & Greed Index                        : api.alternative.me (thật)
+   Tâm lý từng coin                          : proxy suy từ biến động 24h thật (được ghi rõ trên UI)
+==================================================== */
+
+/* Binance symbols: 5 coin vốn hóa lớn nhất + PAXG (vàng tokenized 1:1) */
+const BINANCE_SYMS = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT", "PAXGUSDT"];
+const OIL_BASE = 62.0; /* base dầu mô phỏng (USD) */
+
+const assets = [
+  { symbol: "BTC",  name: "Bitcoin",        color: "#f7931a", bnb: "BTCUSDT",  price: 0, change: 0, history: [], real: true,  volUsd: 0, buyUsd: 0, sellUsd: 0 },
+  { symbol: "ETH",  name: "Ethereum",       color: "#627eea", bnb: "ETHUSDT",  price: 0, change: 0, history: [], real: true,  volUsd: 0, buyUsd: 0, sellUsd: 0 },
+  { symbol: "BNB",  name: "BNB",             color: "#f3ba2f", bnb: "BNBUSDT",  price: 0, change: 0, history: [], real: true,  volUsd: 0, buyUsd: 0, sellUsd: 0 },
+  { symbol: "SOL",  name: "Solana",         color: "#9945ff", iconBg: "#141821", bnb: "SOLUSDT",  price: 0, change: 0, history: [], real: true,  volUsd: 0, buyUsd: 0, sellUsd: 0 },
+  { symbol: "XRP",  name: "XRP",             color: "#00aae4", iconBg: "#ffffff", bnb: "XRPUSDT",  price: 0, change: 0, history: [], real: true,  volUsd: 0, buyUsd: 0, sellUsd: 0 },
+  { symbol: "XAU",  name: "Vàng (PAXG/USD)", color: "#d4af37", bnb: "PAXGUSDT", price: 0, change: 0, history: [], real: true,  volUsd: 0, buyUsd: 0, sellUsd: 0 },
+  { symbol: "OIL",  name: "Dầu (mô phỏng)",  color: "#8b5e3c", bnb: null,        price: OIL_BASE, change: 0, history: [], real: false, volUsd: 0, buyUsd: 0, sellUsd: 0 },
+];
+
+/* ===== LOGO THƯƠNG HIỆU (SVG inline — bộ logo chuẩn như TradingView) ===== */
+const ICONS = {
+  BTC: `<svg viewBox="0 0 24 24"><path fill="#fff" fill-rule="evenodd" d="M23.189 14.02c.314-2.096-1.283-3.223-3.465-3.975l.708-2.84-1.728-.43-.69 2.765c-.454-.114-.92-.22-1.385-.326l.695-2.783L15.596 6l-.708 2.839c-.376-.086-.746-.17-1.104-.26l.002-.009-2.384-.595-.46 1.846s1.283.294 1.256.312c.7.175.826.638.805 1.006l-.806 3.235c.048.012.11.03.18.057l-.183-.045-1.13 4.532c-.086.212-.303.531-.793.41.018.025-1.256-.313-1.256-.313l-.858 1.978 2.25.561c.418.105.828.215 1.231.318l-.715 2.872 1.727.43.708-2.84c.472.127.93.245 1.378.357l-.706 2.828 1.728.43.715-2.866c2.948.558 5.164.333 6.097-2.333.752-2.146-.037-3.385-1.588-4.192 1.13-.26 1.98-1.003 2.207-2.538zm-3.95 5.538c-.533 2.147-4.148.986-5.32.695l.95-3.805c1.172.293 4.929.872 4.37 3.11zm.535-5.569c-.487 1.953-3.495.96-4.47.717l.86-3.45c.975.243 4.118.696 3.61 2.733z"/></svg>`,
+  ETH: `<svg viewBox="0 0 24 24"><g fill="#fff"><path fill-opacity=".6" d="M11.998 0v8.87l7.497 3.35z"/><path fill-opacity=".6" d="M11.998 0L4.5 12.22l7.498-3.35z"/><path fill-opacity=".25" d="M11.998 17.968v6.027L19.5 13.616z"/><path fill-opacity=".6" d="M11.998 23.995v-6.028L4.5 13.616z"/><path fill-opacity=".25" d="M11.998 16.57l7.497-4.353-7.497-3.348z"/><path fill-opacity=".6" d="M4.5 12.217l7.498 4.353v-7.7z"/></g></svg>`,
+  BNB: `<svg viewBox="0 0 24 24"><path fill="#fff" d="M8.213 10.122L12 6.335l3.789 3.789 2.204-2.204L12 1.927 6.009 7.918l2.204 2.204zM1.927 12l2.204-2.204L6.335 12l-2.204 2.204L1.927 12zm6.286 1.878L12 17.665l3.789-3.789 2.204 2.204L12 22.073l-5.991-5.991-.003-.003 2.207-2.201zM17.665 12l2.204-2.204L22.073 12l-2.204 2.204L17.665 12zm-3.124 0L12 9.459 9.459 12 12 14.541 14.541 12z"/></svg>`,
+  SOL: `<svg viewBox="0 0 397.7 311.7"><defs><linearGradient id="solGrad" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#00FFA3"/><stop offset="1" stop-color="#DC1FFF"/></linearGradient></defs><g fill="url(#solGrad)"><path d="M64.6 237.9c2.4-2.4 5.7-3.8 9.2-3.8h317.4c5.8 0 8.7 7 4.6 11.1l-62.7 62.7c-2.4 2.4-5.7 3.8-9.2 3.8H6.5c-5.8 0-8.7-7-4.6-11.1l62.7-62.7z"/><path d="M64.6 3.8C67.1 1.4 70.4 0 73.8 0h317.4c5.8 0 8.7 7 4.6 11.1l-62.7 62.7c-2.4 2.4-5.7 3.8-9.2 3.8H6.5c-5.8 0-8.7-7-4.6-11.1L64.6 3.8z"/><path d="M323.1 120.1c-2.4-2.4-5.7-3.8-9.2-3.8H6.5c-5.8 0-8.7 7-4.6 11.1l62.7 62.7c2.4 2.4 5.7 3.8 9.2 3.8h317.4c5.8 0 8.7-7 4.6-11.1l-62.7-62.7z"/></g></svg>`,
+  XRP: `<svg viewBox="0 0 24 24"><path fill="#23292F" fill-rule="evenodd" d="M18.035 4.398h3.016c.077 0 .153-.02.22-.058.127-.073.218-.197.25-.342.032-.145-.001-.297-.09-.416L17.18 0h-3.444l2.527 3.395c.277.371.647.668 1.074.86.22.1.458.15.698.143zM5.965 4.398c.24.007.478-.043.698-.144.427-.192.797-.488 1.074-.86L10.264 0H6.82L2.569 3.582c-.089.12-.122.271-.09.416.032.145.123.27.25.342.067.038.143.058.22.058h3.016zM18.035 19.602c-.24-.007-.478.043-.698.143-.427.192-.797.489-1.074.86L13.736 24h3.445l4.25-3.582c.089-.12.122-.271.09-.416-.032-.145-.122-.269-.25-.342-.066-.038-.142-.058-.219-.058h-3.017zM5.965 19.602H2.949c-.077 0-.153.02-.22.058-.127.073-.218.197-.25.342-.032.145.001.297.09.416L6.82 24h3.445l-2.527-3.395c-.277-.371-.647-.668-1.074-.86-.22-.1-.458-.15-.699-.143zM12 13.584c.24-.006.479-.057.7-.148.427-.192.797-.49 1.073-.861l2.13-2.683c.417-.524.87-1.074 1.206-1.55.06-.08.082-.181.063-.279-.02-.098-.078-.183-.162-.236-.097-.061-.209-.093-.323-.093H7.313c-.114 0-.226.032-.323.093-.084.053-.142.138-.162.236-.019.098.002.199.063.278.336.477.79 1.027 1.206 1.551l2.13 2.683c.276.371.646.67 1.073.86.221.092.459.143.7.149z"/></svg>`,
+  XAU: `<svg viewBox="0 0 24 24"><g fill="#fff"><ellipse cx="12" cy="6.4" rx="7" ry="2.7"/><path fill-opacity=".8" d="M5 6.4v4.7c0 1.5 3.1 2.7 7 2.7s7-1.2 7-2.7V6.4c0 1.5-3.1 2.7-7 2.7S5 7.9 5 6.4z"/><path fill-opacity=".6" d="M5 11.1v4.7c0 1.5 3.1 2.7 7 2.7s7-1.2 7-2.7v-4.7c0 1.5-3.1 2.7-7 2.7s-7-1.2-7-2.7z"/></g></svg>`,
+  OIL: `<svg viewBox="0 0 24 24"><path fill="#fff" d="M12 2.2S5.4 10 5.4 14.7a6.6 6.6 0 1013.2 0C18.6 10 12 2.2 12 2.2z"/><ellipse cx="9.8" cy="14.6" rx="1.7" ry="2.6" fill="#000" opacity=".18" transform="rotate(-18 9.8 14.6)"/></svg>`,
+};
+
+const byBnb = Object.fromEntries(assets.filter(a => a.bnb).map(a => [a.bnb, a]));
+const bySymbol = Object.fromEntries(assets.map(a => [a.symbol, a]));
+let oilPrice = OIL_BASE, oilChange = 0, oilHistory = [];
+
+/* ================= FETCH HELPERS ================= */
+async function jget(url, timeoutMs = 8000) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return await res.json();
+  } finally { clearTimeout(t); }
+}
+
+async function fetchTickers() {
+  const q = encodeURIComponent(JSON.stringify(BINANCE_SYMS));
+  const rows = await jget("https://api.binance.com/api/v3/ticker/24hr?symbols=" + q);
+  for (const r of rows) {
+    const a = byBnb[r.symbol];
+    if (!a) continue;
+    a.price = parseFloat(r.lastPrice);
+    a.change = parseFloat(r.priceChangePercent);
+    a.volUsd = parseFloat(r.quoteVolume);
+    a.history.push(a.price);
+    if (a.history.length > 31) a.history.shift();
+  }
+}
+
+async function fetchKlines() {
+  /* 30 nến 1h: sparkline (close) + dòng lệnh thật 24h gần nhất:
+     k[5] = quote volume (USD), k[9] = taker-buy quote volume (USD) → bán = tổng − mua */
+  for (const a of assets.filter(x => x.bnb)) {
+    const k = await jget(`https://api.binance.com/api/v3/klines?symbol=${a.bnb}&interval=1h&limit=30`);
+    a.history = k.map(c => parseFloat(c[4]));
+    let buy = 0, tot = 0;
+    for (const c of k.slice(-24)) { buy += parseFloat(c[9]); tot += parseFloat(c[5]); }
+    a.buyUsd = buy;
+    a.sellUsd = Math.max(0, tot - buy);
+  }
+}
+
+async function fetchFng() {
+  const d = await jget("https://api.alternative.me/fng/?limit=1");
+  const f = d.data[0];
+  return { value: +f.value, cls: f.value_classification, ts: +f.timestamp * 1000 };
+}
+
+/* ================= HELPERS ================= */
+const $ = id => document.getElementById(id);
+function fmtPrice(n) {
+  if (n >= 1000) return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (n >= 1) return n.toFixed(2);
+  return n.toFixed(4);
+}
+function fmtVol(usd) {
+  if (usd >= 1e9) return "$" + (usd / 1e9).toFixed(2) + "B";
+  if (usd >= 1e6) return "$" + (usd / 1e6).toFixed(1) + "M";
+  return "$" + Math.round(usd).toLocaleString("en-US");
+}
+function chgClass(v) { return v >= 0 ? "up" : "down"; }
+
+/* proxy tâm lý đã bỏ — tâm lý giờ = tỉ lệ khối lượng lệnh Mua/Bán thật 24h từ Binance klines (cột taker buy volume) */
+
+function drawSparkline(canvas, data, color) {
+  const w = canvas.width = canvas.offsetWidth * 2;
+  const h = canvas.height = canvas.offsetHeight * 2;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, w, h);
+  const min = Math.min(...data), max = Math.max(...data), range = max - min || 1;
+  const step = w / (data.length - 1);
+  const yOf = v => h - ((v - min) / range) * h * 0.86 - h * 0.06;
+
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, color + "3d");
+  grad.addColorStop(1, color + "00");
+  ctx.beginPath();
+  ctx.moveTo(0, h);
+  data.forEach((v, i) => ctx.lineTo(i * step, yOf(v)));
+  ctx.lineTo(w, h); ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+
+  ctx.beginPath();
+  data.forEach((v, i) => i === 0 ? ctx.moveTo(i * step, yOf(v)) : ctx.lineTo(i * step, yOf(v)));
+  ctx.strokeStyle = color; ctx.lineWidth = 2.6; ctx.lineJoin = "round"; ctx.lineCap = "round";
+  ctx.stroke();
+
+  /* endpoint dot */
+  const lx = w, ly = yOf(data[data.length - 1]);
+  ctx.beginPath(); ctx.arc(lx - 3, ly, 4, 0, Math.PI * 2);
+  ctx.fillStyle = color; ctx.fill();
+}
+
+/* ================= LEFT: BUILD + UPDATE ================= */
+const priceEls = {};
+function buildPrices() {
+  $("priceList").innerHTML = assets.map((a, i) => `
+    <article class="asset">
+      <div class="asset-icon" style="background:${a.iconBg || a.color}">${ICONS[a.symbol] || a.symbol.slice(0, 2)}</div>
+      <div class="asset-id">
+        <strong>${a.symbol}${a.real ? "" : " <span class='sim-badge'>MÔ PHỎNG</span>"}</strong>
+        <span>${a.name}</span>
+        <small class="vol"></small>
+      </div>
+      <div class="asset-spark"><canvas></canvas></div>
+      <div class="asset-quote">
+        <div class="price">$${fmtPrice(a.price)}</div>
+        <div><span class="chg ${chgClass(a.change)}"></span></div>
+      </div>
+    </article>`).join("");
+
+  document.querySelectorAll(".asset").forEach((el, i) => {
+    priceEls[assets[i].symbol] = {
+      price: el.querySelector(".price"),
+      chg: el.querySelector(".chg"),
+      vol: el.querySelector(".vol"),
+      canvas: el.querySelector("canvas"),
+    };
+  });
+}
+
+function updatePrices() {
+  assets.forEach(a => {
+    const el = priceEls[a.symbol];
+    if (a.price <= 0) return; /* chưa fetch được */
+    el.price.textContent = "$" + fmtPrice(a.price);
+    el.chg.className = "chg " + chgClass(a.change);
+    el.chg.textContent = (a.change >= 0 ? "▲ " : "▼ ") + Math.abs(a.change).toFixed(2) + "%";
+    if (a.real) el.vol.textContent = "KL 24h: " + fmtVol(a.volUsd);
+    if (a.history.length > 1) drawSparkline(el.canvas, a.history, a.change >= 0 ? "#0ecb81" : "#f6465d");
+  });
+}
+
+/* flash price on tick */
+function flashPrice(prev) {
+  assets.forEach(a => {
+    if (prev[a.symbol] !== undefined && prev[a.symbol] !== a.price) {
+      const el = priceEls[a.symbol];
+      const cls = a.price > prev[a.symbol] ? "flash-up" : "flash-down";
+      el.price.classList.remove("flash-up", "flash-down");
+      void el.price.offsetWidth; /* restart animation */
+      el.price.classList.add(cls);
+    }
+  });
+}
+
+/* ================= RIGHT: BUILD + UPDATE ================= */
+const sentEls = {};
+function buildSentiment() {
+  $("sentimentList").innerHTML = assets.map((a, i) => `
+    <article class="sent">
+      <div class="sent-top">
+        <div class="sent-id">
+          <div class="mini-ic" style="background:${a.iconBg || a.color}">${ICONS[a.symbol] || a.symbol.slice(0, 2)}</div>
+          <b>${a.symbol}</b><span>${a.name}</span>
+        </div>
+        <div class="sent-vote">${a.real ? "KL 24h: " + (a.volUsd ? fmtVol(a.volUsd) : "…") : "mô phỏng"}</div>
+      </div>
+      <div class="sent-bar">
+        <div class="seg bull"><span></span></div>
+        <div class="seg bear"><span></span></div>
+      </div>
+      <div class="sent-legend">
+        <span><i class="i-bull"></i>Lệnh Mua <b class="v-bull"></b></span>
+        <span><i class="i-bear"></i>Lệnh Bán <b class="v-bear"></b></span>
+        <span class="sent-vote" style="margin-left:auto">$<b class="v-usd" style="margin-left:3px"></b></span>
+      </div>
+    </article>`).join("");
+
+  document.querySelectorAll(".sent").forEach((el, i) => {
+    sentEls[assets[i].symbol] = {
+      bull: el.querySelector(".seg.bull"),
+      bear: el.querySelector(".seg.bear"),
+      vb: el.querySelector(".v-bull"),
+      vr: el.querySelector(".v-bear"),
+      vusd: el.querySelector(".v-usd"),
+    }; 
+  });
+}
+
+function updateSentiment() {
+  assets.forEach(a => {
+    const el = sentEls[a.symbol];
+    let bp, sp, busd, susd;
+    if (a.real && a.buyUsd + a.sellUsd > 0) {
+      busd = a.buyUsd; susd = a.sellUsd;
+    } else {
+      /* dầu mô phỏng: suy flow từ biến động giá mô phỏng để thanh vẫn có ý nghĩa tương đối */
+      const w = 50 + a.change * 4;
+      busd = Math.max(1, w); susd = Math.max(1, 100 - w);
+    }
+    const tot = busd + susd;
+    bp = Math.round(busd / tot * 100); sp = 100 - bp;
+    el.bull.style.width = bp + "%"; el.bull.firstElementChild.textContent = bp + "%";
+    el.bear.style.width = sp + "%"; el.bear.firstElementChild.textContent = sp + "%";
+    el.vb.textContent = bp + "%"; el.vr.textContent = sp + "%";
+    if (a.real) el.vusd.textContent = fmtVol(busd) + " / " + fmtVol(susd);
+    else el.vusd.textContent = "—";
+  });
+}
+
+/* ================= CLOCK ================= */
+function updateClock() {
+  $("clock").textContent = new Date().toLocaleString("vi-VN", {
+    timeZone: "Asia/Ho_Chi_Minh", hour: "2-digit", minute: "2-digit", second: "2-digit",
+    day: "2-digit", month: "2-digit",
+  });
+}
+
+/* ================= LIVE REFRESH (dữ liệu thật) ================= */
+let fngCache = null, klinesTicks = 0, errStreak = 0;
+
+async function refresh() {
+  const prev = {};
+  assets.forEach(a => { prev[a.symbol] = a.price; });
+
+  try {
+    await fetchTickers();
+
+    /* sparkline thật: làm mới klines 1h mỗi 5 phút (30 nến × 6 assets, đủ nhẹ) */
+    if (++klinesTicks % 150 === 1) await fetchKlines();
+
+    /* dầu: mô phỏng bước neo quanh base giữa các lần tick (badge MÔ PHỎNG đã ghi rõ) */
+    oilPrice = Math.max(35, oilPrice + oilPrice * (Math.random() - 0.5) * 0.004);
+    oilChange = Math.max(-8, Math.min(8, oilChange + (Math.random() - 0.5) * 0.2));
+    bySymbol.OIL.price = oilPrice;
+    bySymbol.OIL.change = oilChange;
+    oilHistory.push(oilPrice);
+    if (oilHistory.length > 31) oilHistory.shift();
+    bySymbol.OIL.history = oilHistory.slice();
+
+    errStreak = 0;
+    $("liveChip").className = "chip live";
+    $("liveChip").innerHTML = '<span class="dot"></span>LIVE · BINANCE';
+  } catch (e) {
+    if (++errStreak >= 3) {
+      $("liveChip").className = "chip off";
+      $("liveChip").innerHTML = '<span class="dot"></span>MẤT KẾT NỐI — HIỂN THỊ DỮ LIỆU CŨ';
+    }
+  }
+
+  /* Fear & Greed thật: làm mới mỗi 10 phút */
+  if (!fngCache || Date.now() - fngCache.at > 600000) {
+    jget("https://api.alternative.me/fng/?limit=1")
+      .then(d => {
+        const f = d.data[0];
+        fngCache = { at: Date.now(), value: +f.value, cls: f.value_classification, ts: +f.timestamp * 1000 };
+      })
+      .catch(() => {}); /* giữ cache cũ nếu lỗi */
+  }
+
+  updatePrices();
+  flashPrice(prev);
+  updateSentiment();
+  renderGauge();
+}
+
+function renderGauge() {
+  if (!fngCache) return;
+  const { value, cls, ts } = fngCache;
+  $("gaugeNum").textContent = value;
+  $("gaugeArc").style.strokeDashoffset = 301.6 * (1 - value / 100);
+  $("gClass").textContent = cls;
+  $("gTime").textContent = new Date(ts).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  const btc = bySymbol.BTC;
+  if (btc.price > 0) {
+    const g = $("gBtc");
+    g.textContent = (btc.change >= 0 ? "+" : "") + btc.change.toFixed(2) + "%";
+    g.style.color = btc.change >= 0 ? "var(--up)" : "var(--down)";
+  }
+  const lab = value >= 60 ? ["THỊ TRƯỜNG THAM LAM", "var(--up)"]
+            : value >= 45 ? ["TRUNG LẬP", "var(--gold)"]
+            : value >= 25 ? ["THỊ TRƯỜNG SỢ HÃI", "var(--down)"]
+            : ["SỢ HÃI CỰC ĐỘ", "var(--down)"];
+  $("gaugeLabel").textContent = lab[0];
+  $("gaugeLabel").style.color = lab[1];
+}
+
+/* ================= THEME TOGGLE ================= */
+function syncThemeBtn() { $("themeBtn").textContent = document.documentElement.dataset.theme === "light" ? "🌙" : "☀️"; }
+$("themeBtn").addEventListener("click", () => {
+  const toLight = document.documentElement.dataset.theme !== "light";
+  if (toLight) document.documentElement.dataset.theme = "light";
+  else delete document.documentElement.dataset.theme;
+  try { localStorage.setItem("wdt_theme", toLight ? "light" : "dark"); } catch (e) {}
+  syncThemeBtn();
+});
+syncThemeBtn();
+
+/* ================= INIT ================= */
+buildPrices();
+buildSentiment();
+updateClock();
+setInterval(updateClock, 1000);
+refresh();
+setInterval(refresh, 2000);
+</script>
+</body>
+</html>
