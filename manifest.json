@@ -1,0 +1,34 @@
+{
+  "name": "WĐT AI — Bảng Giá & Tâm Lý Thị Trường",
+  "short_name": "WĐT AI",
+  "description": "Giá coin, vàng, dầu thời gian thực từ Binance + tâm lý thị trường theo dòng lệnh Mua/Bán thật + Fear & Greed Index.",
+  "lang": "vi",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#07090d",
+  "theme_color": "#07090d",
+  "categories": ["finance"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

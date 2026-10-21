@@ -2,3 +2,10 @@
 .srv.log
 .srv.err
 *.zip
+
+# Xcode
+ios/DerivedData/
+ios/build/
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
