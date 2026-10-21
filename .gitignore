@@ -9,3 +9,6 @@ ios/build/
 xcuserdata/
 *.xcuserstate
 *.xcscmblueprint
+
+# Site deploy build output
+site-build/public/
