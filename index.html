@@ -1253,8 +1253,8 @@
     border-radius: 99px;
     font-family: 'JetBrains Mono', monospace;
   }
-  /* Note: On-chain Inflow (>0) = Coins moving TO exchange = Selling pressure (Warning/Red-Orange)
-     On-chain Outflow (<0) = Coins withdrawn FROM exchange to cold wallet = Accumulation (Bullish Green) */
+  /* Màu chỉ thể hiện chiều thay đổi dự trữ: tăng dự trữ (đỏ-cam) / giảm dự trữ (xanh).
+     Không hàm ý mua/bán. */
   .flow-signal-pill.inflow {
     background: rgba(255, 69, 58, 0.16);
     color: #ff6961;
@@ -1264,6 +1264,16 @@
     background: rgba(48, 209, 88, 0.16);
     color: #30d158;
     border: 1px solid rgba(48, 209, 88, 0.35);
+  }
+  .flow-signal-pill.pending {
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--text-2);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+  }
+  .flow-signal-pill.error {
+    background: rgba(255, 159, 10, 0.14);
+    color: #ff9f0a;
+    border: 1px solid rgba(255, 159, 10, 0.35);
   }
   .cex-metric-row {
     display: flex;
@@ -1766,6 +1776,9 @@
             <span>🐋 Lệnh Cá Voi: <b id="whaleCountStat" style="color:#fff">0</b></span>
             <span>💥 Thanh lý Futures: <b id="liqCountStat" style="color:#ff9f0a">0</b></span>
           </div>
+          <div style="margin-top:8px;font-size:10.5px;line-height:1.45;color:var(--text-3);">
+            Ngưỡng $ chỉ lọc lệnh Cá Voi Spot. Binance chỉ đẩy <b>lệnh thanh lý lớn nhất của mỗi symbol trong mỗi 1 giây</b> lên luồng công khai — nên cột thanh lý là mẫu thật, không phải tổng khối lượng thanh lý toàn thị trường.
+          </div>
           <div class="volatility-feed-list" id="volatilityFeedList"></div>
         </div>
 
@@ -1808,11 +1821,11 @@
   <!-- ==================== SECTION 3.5: DAILY ON-CHAIN CEX INFLOW / OUTFLOW RADAR ==================== -->
   <section class="section-container" id="cex-onchain-section" style="padding-top: 24px;">
     <div class="section-header">
-      <div class="section-eyebrow">KIỂM TRA DÒNG TIỀN VÍ ON-CHAIN LÊN SÀN MỖI NGÀY (PROOF OF RESERVES)</div>
-      <h2 class="section-heading"><span class="section-Heading-gradient">Lượng Coin chuyển lên sàn & rút khỏi sàn mỗi ngày.</span></h2>
+      <div class="section-eyebrow">BIẾN ĐỘNG DỰ TRỮ VÍ SÀN — DEFILLAMA PROOF OF RESERVES</div>
+      <h2 class="section-heading"><span class="section-Heading-gradient">Dự trữ trong ví các sàn thay đổi bao nhiêu mỗi ngày.</span></h2>
       <p class="section-desc">
-        Theo dõi trực tiếp biến động số dư ví lạnh/ví nóng On-Chain của <b>Binance, OKX, Coinbase, Bybit, Bitfinex, Robinhood, Bitget, Gate.io</b> từ dữ liệu Proof-of-Reserves (DefiLlama On-Chain).
-        <br><span style="font-size:13.5px;color:var(--text-3);">💡 <b>Nạp ròng lên sàn (Inflow &gt; 0)</b> báo hiệu áp lực xả bán tiềm năng · <b>Rút ròng về ví cá nhân (Outflow &lt; 0)</b> báo hiệu Cá Voi gom hàng tích lũy.</span>
+        Đọc trực tiếp chuỗi snapshot số dư ví của <b>Binance, OKX, KuCoin, Bybit, Bitfinex, Robinhood, Bitget, Gate.io</b> qua API công khai DefiLlama. Số trên trang là <b>thay đổi dự trữ ròng</b> giữa hai lần snapshot — không phải tổng khối lượng nạp/rút, và không phải số ước lượng.
+        <br><span style="font-size:13.5px;color:var(--text-3);">⚠ <b>Đây là thay đổi số dư các ví được DefiLlama gắn nhãn thuộc sàn</b>, không phải lệnh nạp/rút của khách. Nạp và rút trong cùng ngày triệt tiêu nhau; ví chưa được gắn nhãn, đổi nhà lưu ký hoặc luân chuyển nội bộ ví có thể làm số này sai lệch. Dùng để tham khảo xu hướng, không dùng làm căn cứ duy nhất để giao dịch.</span>
       </p>
     </div>
 
@@ -1834,8 +1847,8 @@
           <button type="button" class="cex-tab-btn" data-cex-tf="7d">7 Ngày</button>
           <button type="button" class="cex-tab-btn" data-cex-tf="30d">30 Ngày</button>
         </div>
-        <span id="cexSyncBadge" style="font-size:11px;font-family:'JetBrains Mono',monospace;padding:5px 10px;border-radius:99px;background:rgba(48,209,88,0.12);color:var(--up);border:1px solid rgba(48,209,88,0.3);">
-          ● Đang đồng bộ On-Chain...
+        <span id="cexSyncBadge" style="font-size:11px;font-family:'JetBrains Mono',monospace;padding:5px 10px;border-radius:99px;background:rgba(255,255,255,0.06);color:var(--text-2);border:1px solid rgba(255,255,255,0.14);">
+          ● Đang tải dữ liệu ví sàn…
         </span>
       </div>
     </div>
@@ -1843,28 +1856,28 @@
     <!-- 4 Global Aggregate On-Chain KPIs -->
     <div class="cex-summary-kpis">
       <div class="cex-kpi-card">
-        <small id="kpiHoldingsLabel">Tổng dự trữ On-Chain (8 Sàn lớn)</small>
-        <div class="cex-kpi-val" id="kpiTotalHoldings">1,289,400 BTC</div>
-        <div class="cex-kpi-sub" id="kpiTotalHoldingsUsd">≈ $104.60B bảo chứng ví thực</div>
+        <small id="kpiHoldingsLabel">Tổng dự trữ trong ví sàn</small>
+        <div class="cex-kpi-val" id="kpiTotalHoldings">—</div>
+        <div class="cex-kpi-sub" id="kpiTotalHoldingsUsd">Chưa có dữ liệu thật</div>
       </div>
       <div class="cex-kpi-card">
-        <small id="kpiInflowLabel">Tổng Coin chuyển LÊN sàn (Inflow)</small>
-        <div class="cex-kpi-val" id="kpiTotalInflow" style="color:#ff6961">+0 BTC</div>
-        <div class="cex-kpi-sub" id="kpiTotalInflowSub">Từ ví On-Chain nạp vào sàn</div>
+        <small id="kpiInflowLabel">Sàn TĂNG dự trữ</small>
+        <div class="cex-kpi-val" id="kpiTotalInflow" style="color:#ff6961">—</div>
+        <div class="cex-kpi-sub" id="kpiTotalInflowSub">Chưa có dữ liệu thật</div>
       </div>
       <div class="cex-kpi-card">
-        <small id="kpiOutflowLabel">Tổng Coin RÚT KHỎI sàn (Outflow)</small>
-        <div class="cex-kpi-val" id="kpiTotalOutflow" style="color:var(--up)">-0 BTC</div>
-        <div class="cex-kpi-sub" id="kpiTotalOutflowSub">Rút từ sàn về ví lạnh lưu trữ</div>
+        <small id="kpiOutflowLabel">Sàn GIẢM dự trữ</small>
+        <div class="cex-kpi-val" id="kpiTotalOutflow" style="color:var(--up)">—</div>
+        <div class="cex-kpi-sub" id="kpiTotalOutflowSub">Chưa có dữ liệu thật</div>
       </div>
       <div class="cex-kpi-card">
-        <small id="kpiNetflowLabel">Dòng tiền ròng (Netflow) & Tín hiệu</small>
-        <div class="cex-kpi-val" id="kpiNetflowVal">-575 BTC</div>
-        <div class="cex-kpi-sub" id="kpiNetflowSignal">🟢 Rút ròng tích lũy (Bullish)</div>
+        <small id="kpiNetflowLabel">Thay đổi dự trữ ròng</small>
+        <div class="cex-kpi-val" id="kpiNetflowVal">—</div>
+        <div class="cex-kpi-sub" id="kpiNetflowSignal">Chưa có dữ liệu thật</div>
       </div>
     </div>
 
-    <!-- 8 Major Exchanges Grid (Binance, OKX, Coinbase, Bybit, Bitfinex, Robinhood, Bitget, Gate.io) -->
+    <!-- 8 Major Exchanges Grid (Binance, OKX, KuCoin, Bybit, Bitfinex, Robinhood, Bitget, Gate.io) -->
     <div class="cex-cards-grid" id="cexExchangeCardsGrid"></div>
 
     <!-- Bottom Analytics Bento: 14-Day Daily Inflow/Outflow Bar Chart + Daily Breakdown Table -->
@@ -1873,13 +1886,13 @@
       <div class="bento-card" style="padding: 26px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
           <div>
-            <div style="font-size:11px;font-weight:700;color:var(--apple-blue-hi);letter-spacing:0.06em;text-transform:uppercase;">BIỂU ĐỒ LƯỢNG COIN NẠP / RÚT MỖI NGÀY (14 NGÀY GẦN NHẤT)</div>
-            <h3 style="font-size:20px;font-weight:700;margin-top:4px;" id="cexChartTitle">Biến động lượng BTC mỗi ngày — Tất cả các sàn (Hợp nhất)</h3>
+            <div style="font-size:11px;font-weight:700;color:var(--apple-blue-hi);letter-spacing:0.06em;text-transform:uppercase;">THAY ĐỔI DỰ TRỮ RÒNG MỖI NGÀY (13 NGÀY GẦN NHẤT)</div>
+            <h3 style="font-size:20px;font-weight:700;margin-top:4px;" id="cexChartTitle">Thay đổi dự trữ ròng BTC mỗi ngày</h3>
           </div>
           <div style="display:flex;gap:10px;align-items:center;font-size:11.5px;font-family:'JetBrains Mono',monospace;">
-            <span style="color:#ff6961;">■ Nạp lên sàn (+Inflow)</span>
-            <span style="color:var(--up);">■ Rút khỏi sàn (-Outflow)</span>
-            <button type="button" id="cexShowAllExchangesBtn" class="cex-tab-btn" style="padding:4px 10px;font-size:11px;">Xem gộp 8 sàn</button>
+            <span style="color:#ff6961;">■ Dự trữ tăng (+)</span>
+            <span style="color:var(--up);">■ Dự trữ giảm (−)</span>
+            <button type="button" id="cexShowAllExchangesBtn" class="cex-tab-btn" style="padding:4px 10px;font-size:11px;">Xem gộp tất cả sàn</button>
           </div>
         </div>
 
@@ -1888,22 +1901,22 @@
         </div>
 
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12px;color:var(--text-2);flex-wrap:wrap;gap:8px;">
-          <span id="cexChartFooterNote">Nhấn vào bất kỳ thẻ sàn nào (Binance, OKX, Coinbase, Bybit...) ở trên để soi riêng lịch sử nạp/rút từng ngày của sàn đó.</span>
-          <span style="font-family:'JetBrains Mono',monospace;color:var(--text-3);" id="cexLastUpdatedDate">Dữ liệu snapshot: Hôm nay</span>
+          <span id="cexChartFooterNote">Nhấn vào thẻ sàn ở trên (Binance, OKX, KuCoin, Bybit…) để xem riêng lịch sử của sàn đó. Mốc 24h/7d/30d so sánh giữa các lần chốt ngày 00:00 UTC; dự trữ hiện tại lấy snapshot mới nhất. Nguồn: <a href="https://defillama.com/cexs" target="_blank" rel="noopener" style="color:var(--apple-blue-hi);">DefiLlama CEX Reserves</a>.</span>
+          <span style="font-family:'JetBrains Mono',monospace;color:var(--text-3);" id="cexLastUpdatedDate">Chưa có snapshot</span>
         </div>
       </div>
 
       <!-- Right: Day-by-Day On-Chain Ledger & Exchange Wallet Inspector -->
       <div class="bento-card" style="padding: 26px;">
-        <div style="font-size:11px;font-weight:700;color:#ffd60a;letter-spacing:0.06em;text-transform:uppercase;">NHẬT KÝ CHUYỂN COIN LÊN SÀN MỖI NGÀY</div>
-        <h3 style="font-size:19px;font-weight:700;margin-top:4px;" id="cexLedgerTitle">Chi tiết từng ngày (BTC)</h3>
+        <div style="font-size:11px;font-weight:700;color:#ffd60a;letter-spacing:0.06em;text-transform:uppercase;">NHẬT KÝ THAY ĐỔI DỰ TRỮ MỖI NGÀY</div>
+        <h3 style="font-size:19px;font-weight:700;margin-top:4px;" id="cexLedgerTitle">BTC · từng ngày</h3>
         <div style="max-height: 275px; overflow-y: auto; margin-top: 8px;">
           <table class="onchain-tx-table">
             <thead>
               <tr>
                 <th>Ngày</th>
                 <th>Sàn / Phạm vi</th>
-                <th>Lượng Coin chuyển</th>
+                <th>Thay đổi ròng</th>
                 <th>Giá trị USD</th>
               </tr>
             </thead>
@@ -2102,6 +2115,9 @@
     let selectedCoinKey = 'BTC';
     // 100% Real-Time Event Log (populated exclusively by Binance Spot aggTrade & Futures forceOrder WebSockets)
     let recentVolatilityEvents = [];
+    // Kept outside the rolling buffer: whale trades can flush all 12 buffered events in seconds,
+    // and the feed must still be able to show the most recent real liquidation.
+    let lastLiquidationEvent = null;
     let realWhaleCount = 0;
     let realLiqCount = 0;
     let activeWhaleThresholdUSD = 10000; // Default $10K filter selectable by user ($10K, $50K, $100K, $500K+)
@@ -2799,7 +2815,15 @@
         return;
       }
 
-      list.innerHTML = recentVolatilityEvents.slice(0, 6).map(ev => `
+      // Whale trades at >= threshold fire every few seconds, so the 6 newest events can fill up
+      // without a single liquidation. Keep the newest liquidation visible so the liquidation column
+      // is never silently empty while the counter above shows real events.
+      const shownEvents = recentVolatilityEvents.slice(0, 6);
+      if (!shownEvents.some(ev => ev.type === 'liq') && lastLiquidationEvent) {
+        shownEvents.push(lastLiquidationEvent);
+      }
+
+      list.innerHTML = shownEvents.map(ev => `
         <div class="vol-event">
           <div class="vol-event-left">
             <span class="vol-tag ${ev.type}">${ev.sym} ${ev.delta}</span>
@@ -3072,7 +3096,7 @@
       }
 
       // Push 100% real event into Radar list
-      recentVolatilityEvents.unshift({
+      const volEvent = ({
         sym: coinSym,
         price: formatPrice(price),
         delta: isLiquidation
@@ -3084,7 +3108,9 @@
           : `Cá voi ${isBuy ? 'gom' : 'xả'} ${formatCompactUSD(notionalUSD)} (${qty.toFixed(3)} ${coinSym}) · ${sourceLabel}`,
         time: `Lúc ${timeStr}`
       });
+      recentVolatilityEvents.unshift(volEvent);
       if (recentVolatilityEvents.length > 12) recentVolatilityEvents.pop();
+      if (isLiquidation) lastLiquidationEvent = volEvent;
       renderVolatilityFeed();
     }
 
@@ -3092,6 +3118,8 @@
     let futuresLiqWs = null;
     let spotConnected = false;
     let futuresConnected = false;
+    // Minimum USD size for a forceOrder event to enter the feed (filters dust only).
+    const LIQ_DUST_FLOOR_USD = 100;
     let lastUiRenderTime = 0;
 
     function updateStreamStatusBanner() {
@@ -3188,18 +3216,23 @@
     }
 
     // 2) Binance USD-M Futures All-Market Liquidation Order Stream (!forceOrder@arr)
+    //    The legacy path wss://fstream.binance.com/ws/!forceOrder@arr still completes the
+    //    WebSocket handshake but delivers ZERO events (measured: 0 msgs / 45s), which made the
+    //    board look empty while the banner still claimed it was live. The working all-market
+    //    endpoint is the /market/ws/ path (measured: ~10 msgs / 45s).
     function connectBinanceFuturesLiquidationStream() {
-      const wsUrl = 'wss://fstream.binance.com/ws/!forceOrder@arr';
+      const wsUrl = 'wss://fstream.binance.com/market/ws/!forceOrder@arr';
 
       try {
         futuresLiqWs = new WebSocket(wsUrl);
 
-        futuresLiqWs.onopen = () => {
-          futuresConnected = true;
-          updateStreamStatusBanner();
-        };
-
+        // Mark the feed live only after a real forceOrder event arrives, so a silent
+        // socket can never be reported as a working liquidation stream.
         futuresLiqWs.onmessage = (event) => {
+          if (!futuresConnected) {
+            futuresConnected = true;
+            updateStreamStatusBanner();
+          }
           try {
             const payload = JSON.parse(event.data);
             const orders = Array.isArray(payload) ? payload : [payload];
@@ -3217,22 +3250,23 @@
               // S === 'BUY' means forced buy to close a SHORT; S === 'SELL' means forced sell to close a LONG
               const isForceBuy = o.S === 'BUY';
 
-              // Show all liquidations >= min($2,500, activeWhaleThresholdUSD * 0.25) or any liquidation on tracked coins
-              const isTrackedCoin = Boolean(ASSETS[rawSym]);
-              const minLiqUSD = isTrackedCoin ? 1000 : Math.min(10000, activeWhaleThresholdUSD * 0.5);
+              // Binance already downsamples this stream (only the largest liquidity order per
+              // symbol per 1000ms is published) and raw sizes are small (measured median ~$140),
+              // so the whale threshold filter is NOT applied here - it is for spot taker trades
+              // only. Applying it left the board permanently empty. A $100 dust floor is kept
+              // so a $5 forced close does not crowd out real events in the 6-row feed.
+              if (notionalUSD < LIQ_DUST_FLOOR_USD) return;
 
-              if (notionalUSD >= minLiqUSD) {
-                triggerWhale3DPulse({
-                  coinSym: rawSym,
-                  isBuy: isForceBuy,
-                  isLiquidation: true,
-                  notionalUSD,
-                  price,
-                  qty,
-                  tradeTime: o.T || item.E,
-                  sourceLabel: 'Binance Futures forceOrder'
-                });
-              }
+              triggerWhale3DPulse({
+                coinSym: rawSym,
+                isBuy: isForceBuy,
+                isLiquidation: true,
+                notionalUSD,
+                price,
+                qty,
+                tradeTime: o.T || item.E,
+                sourceLabel: 'Binance Futures forceOrder'
+              });
             });
           } catch (e) {}
         };
@@ -3257,7 +3291,7 @@
 
         const hudText = document.getElementById('whaleHudText');
         if (hudText) {
-          hudText.textContent = `Đang lọc lệnh Cá Voi thật ≥ ${label} & lệnh Thanh lý Futures trực tiếp...`;
+          hudText.textContent = `Đang lọc lệnh Cá Voi thật ≥ ${label} & mọi lệnh Thanh lý Futures Binance công bố...`;
         }
         renderVolatilityFeed();
       });
@@ -3273,23 +3307,9 @@
         sub: 'Ví Lạnh & Ví Nóng PoR',
         badge: 'BN',
         color: '#f3ba2f',
-        walletTag: 'bc1qm34lsc65zpw79lxes69zkqmk6ee3ewf0j77s3h',
-        slugs: ['binance-cex'],
-        holdings: { BTC: 635112, ETH: 7280327, SOL: 20708715, USDT: 48424580297, XRP: 2345913608, BNB: 36649497 },
-        flows: {
-          '24h': { BTC: -512.9, ETH: 17371.7, SOL: -1632.4, USDT: -504006470, XRP: 3819814, BNB: 924184 },
-          '7d':  { BTC: 259.3,  ETH: 42810.4, SOL: 514280.0, USDT: 1120400000, XRP: 18420000, BNB: 1450200 },
-          '30d': { BTC: -8420.5, ETH: -114200.0, SOL: 1290400.0, USDT: 3480000000, XRP: 64200000, BNB: 2890000 }
-        },
-        dailySeries: {
-          BTC: [
-            { date: '07/10', diff: -19457.2 }, { date: '08/10', diff: 5809.3 }, { date: '09/10', diff: 2210.4 },
-            { date: '10/10', diff: 235.9 },    { date: '11/10', diff: -2882.5 }, { date: '12/10', diff: 100.4 },
-            { date: '13/10', diff: 6022.5 },   { date: '14/10', diff: -748.4 },  { date: '15/10', diff: -236.6 },
-            { date: '16/10', diff: -957.4 },   { date: '17/10', diff: 2722.1 },  { date: '18/10', diff: 214.9 },
-            { date: '19/10', diff: -512.9 }
-          ]
-        }
+        slug: 'binance-cex',
+        holdings: {}, flows: { '24h': {}, '7d': {}, '30d': {} }, dailySeries: {},
+        loaded: false, error: null, lastSnapshotTs: null
       },
       {
         id: 'okx',
@@ -3297,31 +3317,19 @@
         sub: 'OKX Proof of Reserves',
         badge: 'OKX',
         color: '#ffffff',
-        walletTag: 'bc1q2s3rjwvam9dt2ftt4sqxqjf3twav0gdx0k0q2p',
-        slugs: ['okx'],
-        holdings: { BTC: 147432, ETH: 1299459, SOL: 3479415, USDT: 9979906498, XRP: 222974117, BNB: 1240 },
-        flows: {
-          '24h': { BTC: -266.0, ETH: -4526.6, SOL: -15907.9, USDT: 31253092, XRP: 927056, BNB: 0 },
-          '7d':  { BTC: 1501.3, ETH: -12840.2, SOL: -48200.5, USDT: 284500000, XRP: 4120000, BNB: 0 },
-          '30d': { BTC: 3120.8, ETH: 24500.0, SOL: 112400.0, USDT: 890000000, XRP: 12500000, BNB: 0 }
-        },
-        dailySeries: {}
+        slug: 'okx',
+        holdings: {}, flows: { '24h': {}, '7d': {}, '30d': {} }, dailySeries: {},
+        loaded: false, error: null, lastSnapshotTs: null
       },
       {
-        id: 'coinbase',
-        name: 'Coinbase',
-        sub: 'cbBTC & Wrapped Custodial',
-        badge: 'CB',
-        color: '#0052ff',
-        walletTag: '3MqUP6G1daVS5YTD8fz3QgwjZortWwxXFd',
-        slugs: ['coinbase-bridge', 'coinbase-wrapped-staked-eth'],
-        holdings: { BTC: 94831, ETH: 195671, SOL: 1420500, USDT: 2840000000, XRP: 144543028, BNB: 0 },
-        flows: {
-          '24h': { BTC: -1.7, ETH: 75.4, SOL: -8420.0, USDT: 42500000, XRP: -310000, BNB: 0 },
-          '7d':  { BTC: -223.7, ETH: 1420.8, SOL: -29400.0, USDT: 195000000, XRP: -1450000, BNB: 0 },
-          '30d': { BTC: -1840.2, ETH: 6840.0, SOL: -84000.0, USDT: 610000000, XRP: -5200000, BNB: 0 }
-        },
-        dailySeries: {}
+        id: 'kucoin',
+        name: 'KuCoin',
+        sub: 'KuCoin Proof of Reserves',
+        badge: 'KC',
+        color: '#24ae8f',
+        slug: 'kucoin',
+        holdings: {}, flows: { '24h': {}, '7d': {}, '30d': {} }, dailySeries: {},
+        loaded: false, error: null, lastSnapshotTs: null
       },
       {
         id: 'bybit',
@@ -3329,15 +3337,9 @@
         sub: 'Bybit On-Chain Reserves',
         badge: 'BYB',
         color: '#f7a600',
-        walletTag: '1GrwDkr33gT6LuumniYjKEGjTLhsL5kmqC',
-        slugs: ['bybit'],
-        holdings: { BTC: 57879, ETH: 677753, SOL: 3482597, USDT: 4006223365, XRP: 184210000, BNB: 48200 },
-        flows: {
-          '24h': { BTC: 108.8, ETH: 2817.7, SOL: 51445.1, USDT: -32081401, XRP: 1240000, BNB: 410 },
-          '7d':  { BTC: 506.3, ETH: 14920.0, SOL: 148900.0, USDT: 164000000, XRP: 6800000, BNB: 1850 },
-          '30d': { BTC: 1940.0, ETH: 41200.0, SOL: 412000.0, USDT: 520000000, XRP: 19400000, BNB: 5400 }
-        },
-        dailySeries: {}
+        slug: 'bybit',
+        holdings: {}, flows: { '24h': {}, '7d': {}, '30d': {} }, dailySeries: {},
+        loaded: false, error: null, lastSnapshotTs: null
       },
       {
         id: 'bitfinex',
@@ -3345,15 +3347,9 @@
         sub: 'Ví Lạnh Cá Voi Tổ Chức',
         badge: 'BFX',
         color: '#16b157',
-        walletTag: 'bc1qgdjqv0av3q56jvd82tkdjpy7gdp9ut8tlqmgrpmv24sq90ecnvqqjwvw97',
-        slugs: ['bitfinex'],
-        holdings: { BTC: 157736, ETH: 643867, SOL: 484813, USDT: 507942087, XRP: 98420000, BNB: 0 },
-        flows: {
-          '24h': { BTC: 110.0, ETH: 1197.7, SOL: -1870.7, USDT: 116155122, XRP: -420000, BNB: 0 },
-          '7d':  { BTC: 444.2, ETH: 5420.0, SOL: -9400.0, USDT: 210000000, XRP: -1800000, BNB: 0 },
-          '30d': { BTC: 1120.5, ETH: -12400.0, SOL: -24000.0, USDT: 390000000, XRP: -4900000, BNB: 0 }
-        },
-        dailySeries: {}
+        slug: 'bitfinex',
+        holdings: {}, flows: { '24h': {}, '7d': {}, '30d': {} }, dailySeries: {},
+        loaded: false, error: null, lastSnapshotTs: null
       },
       {
         id: 'robinhood',
@@ -3361,15 +3357,9 @@
         sub: 'Custody Cold Storage',
         badge: 'RBH',
         color: '#00c805',
-        walletTag: 'bc1ql49ydapnjafl5t2cp9zqpjwe6pdgmxy98859v2',
-        slugs: ['robinhood'],
-        holdings: { BTC: 140852, ETH: 1220534, SOL: 0, USDT: 32560, XRP: 0, BNB: 0 },
-        flows: {
-          '24h': { BTC: 0.0, ETH: 0.0, SOL: 0.0, USDT: 0, XRP: 0, BNB: 0 },
-          '7d':  { BTC: -41.2, ETH: -1850.0, SOL: 0.0, USDT: 0, XRP: 0, BNB: 0 },
-          '30d': { BTC: 840.4, ETH: 14200.0, SOL: 0.0, USDT: 0, XRP: 0, BNB: 0 }
-        },
-        dailySeries: {}
+        slug: 'robinhood',
+        holdings: {}, flows: { '24h': {}, '7d': {}, '30d': {} }, dailySeries: {},
+        loaded: false, error: null, lastSnapshotTs: null
       },
       {
         id: 'bitget',
@@ -3377,15 +3367,9 @@
         sub: 'Bitget Proof of Reserves',
         badge: 'BGB',
         color: '#00f0ff',
-        walletTag: 'bc1q5nfww5jn5k4c03d9sq4f3636f79g5c66x4fd2p',
-        slugs: ['bitget'],
-        holdings: { BTC: 29542, ETH: 205159, SOL: 962633, USDT: 782761641, XRP: 112400000, BNB: 14200 },
-        flows: {
-          '24h': { BTC: -62.8, ETH: -155.0, SOL: -10523.7, USDT: -48070313, XRP: -840000, BNB: -120 },
-          '7d':  { BTC: -78.4, ETH: -2410.0, SOL: -32400.0, USDT: -85000000, XRP: -2100000, BNB: -450 },
-          '30d': { BTC: 412.0, ETH: 8900.0, SOL: 64000.0, USDT: 140000000, XRP: 5400000, BNB: 1200 }
-        },
-        dailySeries: {}
+        slug: 'bitget',
+        holdings: {}, flows: { '24h': {}, '7d': {}, '30d': {} }, dailySeries: {},
+        loaded: false, error: null, lastSnapshotTs: null
       },
       {
         id: 'gate',
@@ -3393,15 +3377,9 @@
         sub: 'Gate 100% Margin PoR',
         badge: 'GT',
         color: '#2354e6',
-        walletTag: '14kmvhQrWrNEHbrSKBySj4qHGjemDtS3SF',
-        slugs: ['gate'],
-        holdings: { BTC: 19102, ETH: 446104, SOL: 327695, USDT: 317805740, XRP: 68400000, BNB: 8900 },
-        flows: {
-          '24h': { BTC: 1.8, ETH: 1500.0, SOL: -4046.1, USDT: 13686111, XRP: 510000, BNB: 85 },
-          '7d':  { BTC: 337.7, ETH: 6120.0, SOL: -11200.0, USDT: 41200000, XRP: 1900000, BNB: 340 },
-          '30d': { BTC: 680.2, ETH: 15400.0, SOL: 28000.0, USDT: 95000000, XRP: 4200000, BNB: 920 }
-        },
-        dailySeries: {}
+        slug: 'gate',
+        holdings: {}, flows: { '24h': {}, '7d': {}, '30d': {} }, dailySeries: {},
+        loaded: false, error: null, lastSnapshotTs: null
       }
     ];
 
@@ -3449,93 +3427,138 @@
       if (abs >= 1000) return `${sign}${Math.round(abs).toLocaleString('en-US')} ${coinSym}`;
       if (abs >= 10) return `${sign}${abs.toFixed(1)} ${coinSym}`;
       return `${sign}${abs.toFixed(2)} ${coinSym}`;
+    }    // Trạng thái tải dữ liệu thật: KHÔNG có số mồi, không có giá trị mặc định nào được hiển thị.
+    const CEX_STATE = { status: 'loading', ok: 0, failed: 0, lastSnapshotTs: null };
+    const CEX_TIMEFRAMES = [['24h', 24], ['7d', 24 * 7], ['30d', 24 * 30]];
+    const CEX_TRACKED_COINS = ['BTC', 'ETH', 'SOL', 'USDT', 'XRP', 'BNB'];
+
+    // Snapshot gần nhất có mốc thời gian <= target (DefiLlama có thể chèn snapshot lẻ trong ngày,
+    // nên không được lấy theo index kiểu arr[length-2] rồi gọi là "24h").
+    function cexSnapshotAtOrBefore(arr, targetTs) {
+      if (!Array.isArray(arr) || !arr.length) return null;
+      for (let i = arr.length - 1; i >= 0; i--) {
+        if (arr[i] && typeof arr[i].date === 'number' && arr[i].date <= targetTs) return arr[i];
+      }
+      return arr[0] || null;
     }
 
-    function ensureExchangeDailySeries(ex, coinSym) {
-      if (ex.dailySeries && ex.dailySeries[coinSym] && ex.dailySeries[coinSym].length >= 7) {
-        return ex.dailySeries[coinSym];
-      }
-      // Build deterministic 13-day series anchored to the real 24h & 7d netflows if live series hasn't finished loading yet
-      const flow24h = ex.flows?.['24h']?.[coinSym] || 0;
-      const flow7d = ex.flows?.['7d']?.[coinSym] || (flow24h * 4);
-      const avgDay = (flow7d - flow24h) / 6;
-      const dates = ['07/10','08/10','09/10','10/10','11/10','12/10','13/10','14/10','15/10','16/10','17/10','18/10','19/10'];
-      const weights = [-1.4, 0.85, 0.6, -0.5, 1.15, -0.75, 1.3, -0.6, 0.95, -1.1, 1.25, 0.45, 1.0];
-      const series = dates.map((d, idx) => {
-        if (idx === dates.length - 1) return { date: d, diff: flow24h };
-        const base = Math.abs(avgDay) > 0.001 ? avgDay : (ex.holdings[coinSym] || 1000) * 0.0012;
-        return { date: d, diff: base * weights[idx] };
+    // Chuỗi thay đổi dự trữ theo từng NGÀY LỊCH (UTC): lấy snapshot cuối mỗi ngày rồi trừ ngày trước đó.
+    // Thuần tuý tính từ dữ liệu DefiLlama trả về — không nội suy, không sinh số.
+    function cexDailyNetChangeSeries(arr, coinSym) {
+      const byDay = new Map();
+      (arr || []).forEach(snap => {
+        if (!snap || typeof snap.date !== 'number' || !snap.tokens) return;
+        byDay.set(new Date(snap.date * 1000).toISOString().slice(0, 10), snap);
       });
-      if (!ex.dailySeries) ex.dailySeries = {};
-      ex.dailySeries[coinSym] = series;
-      return series;
+      const days = Array.from(byDay.entries()).slice(-15);
+      const out = [];
+      for (let i = 1; i < days.length; i++) {
+        const iso = days[i][0];
+        const dt = new Date(iso + 'T00:00:00Z');
+        out.push({
+          iso,
+          date: `${String(dt.getUTCDate()).padStart(2, '0')}/${String(dt.getUTCMonth() + 1).padStart(2, '0')}`,
+          diff: extractTokenQtyFromMap(days[i][1].tokens, coinSym) - extractTokenQtyFromMap(days[i - 1][1].tokens, coinSym)
+        });
+      }
+      return out;
+    }
+
+    function cexSeriesFor(ex, coinSym) {
+      const s = ex && ex.dailySeries ? ex.dailySeries[coinSym] : null;
+      return Array.isArray(s) ? s : [];
+    }
+
+    function cexLoadedCount() {
+      return CEX_EXCHANGES.filter(e => e.loaded).length;
     }
 
     function renderCexOnchainSection() {
       const coin = activeCexCoin;
       const tf = activeCexTf;
       const unitPrice = getCoinUnitPrice(coin);
-      const tfLabel = tf === '24h' ? '24h qua' : (tf === '7d' ? '7 ngày qua' : '30 ngày qua');
+      const tfLabel = tf === '24h' ? 'chốt ngày 24h' : (tf === '7d' ? '7 ngày gần nhất' : '30 ngày gần nhất');
 
+      // Chỉ cộng các sàn đã tải được dữ liệu thật. Không sàn nào tải được thì hiện "—", không bịa số.
+      const loadedEx = CEX_EXCHANGES.filter(e => e.loaded);
+      const anyLoaded = loadedEx.length > 0;
       let totalHoldings = 0;
-      let totalInflow = 0;  // Sum of positive flows onto exchanges
-      let totalOutflow = 0; // Sum of negative flows leaving exchanges
+      let totalRise = 0; // Sàn có dự trữ tăng
+      let totalFall = 0; // Sàn có dự trữ giảm
 
-      CEX_EXCHANGES.forEach(ex => {
-        const h = ex.holdings[coin] || 0;
-        const f = ex.flows?.[tf]?.[coin] || 0;
-        totalHoldings += h;
-        if (f > 0) totalInflow += f;
-        if (f < 0) totalOutflow += Math.abs(f);
+      loadedEx.forEach(ex => {
+        totalHoldings += ex.holdings[coin] || 0;
+        const f = ex.flows?.[tf]?.[coin];
+        if (typeof f !== 'number' || !isFinite(f)) return;
+        if (f > 0) totalRise += f;
+        if (f < 0) totalFall += Math.abs(f);
       });
 
-      const netflow = totalInflow - totalOutflow;
+      const netChange = totalRise - totalFall;
 
       // Update 4 KPI Cards
-      document.getElementById('kpiHoldingsLabel').textContent = `Tổng dự trữ ${coin} On-Chain (8 Sàn)`;
-      document.getElementById('kpiTotalHoldings').textContent = formatCoinAmount(totalHoldings, coin, false);
-      document.getElementById('kpiTotalHoldingsUsd').textContent = `≈ ${formatCompactUSD(totalHoldings * unitPrice)} bảo chứng ví thực`;
+      document.getElementById('kpiHoldingsLabel').textContent = `Tổng dự trữ ${coin} trong ví sàn (${loadedEx.length}/${CEX_EXCHANGES.length} sàn đã tải)`;
+      document.getElementById('kpiTotalHoldings').textContent = anyLoaded ? formatCoinAmount(totalHoldings, coin, false) : '—';
+      document.getElementById('kpiTotalHoldingsUsd').textContent = anyLoaded ? `≈ ${formatCompactUSD(totalHoldings * unitPrice)} theo DefiLlama` : 'Chưa có dữ liệu thật';
 
-      document.getElementById('kpiInflowLabel').textContent = `Lượng ${coin} chuyển LÊN sàn (${tfLabel})`;
-      document.getElementById('kpiTotalInflow').textContent = formatCoinAmount(totalInflow, coin, true);
-      document.getElementById('kpiTotalInflowSub').textContent = `≈ ${formatCompactUSD(totalInflow * unitPrice)} nạp vào sàn (Áp lực bán)`;
+      document.getElementById('kpiInflowLabel').textContent = `Sàn TĂNG dự trữ ${coin} (${tfLabel})`;
+      document.getElementById('kpiTotalInflow').textContent = anyLoaded ? formatCoinAmount(totalRise, coin, true) : '—';
+      document.getElementById('kpiTotalInflowSub').textContent = anyLoaded ? `≈ ${formatCompactUSD(totalRise * unitPrice)} coin vào lại ví sàn` : 'Chưa có dữ liệu thật';
 
-      document.getElementById('kpiOutflowLabel').textContent = `Lượng ${coin} RÚT KHỎI sàn (${tfLabel})`;
-      document.getElementById('kpiTotalOutflow').textContent = formatCoinAmount(-totalOutflow, coin, true);
-      document.getElementById('kpiTotalOutflowSub').textContent = `≈ ${formatCompactUSD(totalOutflow * unitPrice)} rút về ví lạnh (Tích lũy)`;
+      document.getElementById('kpiOutflowLabel').textContent = `Sàn GIẢM dự trữ ${coin} (${tfLabel})`;
+      document.getElementById('kpiTotalOutflow').textContent = anyLoaded ? formatCoinAmount(-totalFall, coin, true) : '—';
+      document.getElementById('kpiTotalOutflowSub').textContent = anyLoaded ? `≈ ${formatCompactUSD(totalFall * unitPrice)} coin rời ví sàn` : 'Chưa có dữ liệu thật';
 
-      document.getElementById('kpiNetflowLabel').textContent = `Dòng tiền ròng Netflow (${tfLabel})`;
+      document.getElementById('kpiNetflowLabel').textContent = `Thay đổi dự trữ ròng (${tfLabel})`;
       const netValEl = document.getElementById('kpiNetflowVal');
       const netSigEl = document.getElementById('kpiNetflowSignal');
-      netValEl.textContent = formatCoinAmount(netflow, coin, true);
+      netValEl.textContent = anyLoaded ? formatCoinAmount(netChange, coin, true) : '—';
 
-      // For stablecoins (USDT), inflow to exchange = buying power (Bullish). For volatile coins (BTC/ETH/SOL), outflow from exchange = accumulation (Bullish).
-      const isBullish = coin === 'USDT' ? (netflow >= 0) : (netflow <= 0);
-      netValEl.style.color = isBullish ? 'var(--up)' : '#ff6961';
-      if (coin === 'USDT') {
-        netSigEl.innerHTML = netflow >= 0
-          ? `🟢 Nạp ròng ${formatCompactUSD(Math.abs(netflow))} Stablecoin lên sàn để chuẩn bị gom hàng`
-          : `🟠 Rút ròng ${formatCompactUSD(Math.abs(netflow))} Stablecoin khỏi sàn`;
-      } else {
-        netSigEl.innerHTML = netflow <= 0
-          ? `🟢 Rút ròng ${formatCompactUSD(Math.abs(netflow * unitPrice))} khỏi sàn (Cá Voi gom tích lũy)`
-          : `🔴 Nạp ròng ${formatCompactUSD(Math.abs(netflow * unitPrice))} lên sàn (Cảnh báo áp lực xả)`;
-      }
+      // Màu chỉ phản ánh chiều thay đổi dự trữ, không phải khuyến nghị mua/bán.
+      netValEl.style.color = anyLoaded ? (netChange >= 0 ? '#ff6961' : 'var(--up)') : 'var(--text-3)';
+      netSigEl.innerHTML = !anyLoaded
+        ? 'Chưa tải được dữ liệu ví sàn — không hiển thị số ước lượng'
+        : (netChange >= 0
+            ? `▲ Dự trữ trong ví sàn tăng ${formatCompactUSD(Math.abs(netChange * unitPrice))} trong kỳ`
+            : `▼ Dự trữ trong ví sàn giảm ${formatCompactUSD(Math.abs(netChange * unitPrice))} trong kỳ`);
 
       // Render 8 Exchange Cards
       const grid = document.getElementById('cexExchangeCardsGrid');
       grid.innerHTML = CEX_EXCHANGES.map(ex => {
-        const hold = ex.holdings[coin] || 0;
-        const flow = ex.flows?.[tf]?.[coin] || 0;
-        const flowUsd = Math.abs(flow) * unitPrice;
-        const isInflow = flow > 0;
-        const isZero = Math.abs(flow) < 0.01;
-        const pillClass = isInflow ? 'inflow' : 'outflow';
-        const pillText = isZero
-          ? 'ĐI NGANG'
-          : (isInflow ? '▲ NẠP LÊN SÀN' : '▼ RÚT VỀ VÍ');
+        const loaded = Boolean(ex.loaded);
+        const rawFlow = ex.flows?.[tf]?.[coin];
+        const hasFlow = loaded && typeof rawFlow === 'number' && isFinite(rawFlow);
+        const hold = loaded ? (ex.holdings[coin] || 0) : null;
+        const flow = hasFlow ? rawFlow : null;
+        const flowUsd = hasFlow ? Math.abs(flow) * unitPrice : 0;
+        const isInflow = hasFlow && flow > 0;
+        const isZero = hasFlow && Math.abs(flow) < 0.01;
 
-        const flowColor = isZero ? 'var(--text-2)' : (isInflow ? '#ff6961' : 'var(--up)');
+        let pillClass, pillText, flowColor = 'var(--text-3)';
+        if (!loaded) {
+          pillClass = ex.error ? 'error' : 'pending';
+          pillText = ex.error ? 'LỖI TẢI' : 'ĐANG TẢI';
+        } else if (!hasFlow) {
+          pillClass = 'pending';
+          pillText = 'KHÔNG ĐỦ LỊCH SỬ';
+        } else {
+          pillClass = isInflow ? 'inflow' : 'outflow';
+          pillText = isZero ? 'ĐI NGANG' : (isInflow ? '▲ TĂNG DỰ TRỮ' : '▼ GIẢM DỰ TRỮ');
+          flowColor = isZero ? 'var(--text-2)' : (isInflow ? '#ff6961' : 'var(--up)');
+        }
+
+        const flowBlock = !loaded
+          ? `<div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:800;color:var(--text-3);margin-top:2px;">—</div>
+             <div style="font-size:11.5px;color:${ex.error ? '#ff9f0a' : 'var(--text-3)'};margin-top:2px;line-height:1.4;">${ex.error ? 'Không lấy được dữ liệu: ' + ex.error : 'Đang tải từ DefiLlama…'}</div>`
+          : `<div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:800;color:${flowColor};margin-top:2px;">
+                ${hasFlow ? formatCoinAmount(flow, coin, true) : '—'}
+              </div>
+             <div style="font-size:11.5px;color:var(--text-2);font-family:'JetBrains Mono',monospace;margin-top:2px;">
+                ${hasFlow ? `≈ ${isInflow ? '+' : (isZero ? '' : '-')}${formatCompactUSD(flowUsd)}` : 'Chưa đủ snapshot để so sánh'}
+              </div>`;
+
+        const holdText = loaded ? formatCoinAmount(hold, coin, false) : '—';
+        const holdUsdText = loaded ? formatCompactUSD(hold * unitPrice) : '—';
 
         return `
           <article class="cex-exchange-card ${selectedExchangeId === ex.id ? 'selected' : ''}" style="--cex-accent:${ex.color}" data-cex-id="${ex.id}">
@@ -3551,22 +3574,17 @@
             </div>
 
             <div style="margin: 10px 0;">
-              <small style="font-size:11px;color:var(--text-3);display:block;">Lượng ${coin} chuyển (${tfLabel}):</small>
-              <div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:800;color:${flowColor};margin-top:2px;">
-                ${formatCoinAmount(flow, coin, true)}
-              </div>
-              <div style="font-size:11.5px;color:var(--text-2);font-family:'JetBrains Mono',monospace;margin-top:2px;">
-                ≈ ${isInflow ? '+' : (isZero ? '' : '-')}${formatCompactUSD(flowUsd)}
-              </div>
+              <small style="font-size:11px;color:var(--text-3);display:block;">Thay đổi dự trữ ròng (${tfLabel}):</small>
+              ${flowBlock}
             </div>
 
             <div class="cex-metric-row">
-              <span>Số dư ví sàn (${coin}):</span>
-              <b style="color:#fff">${formatCoinAmount(hold, coin, false)}</b>
+              <span>Dự trữ trong ví sàn (${coin}):</span>
+              <b style="color:#fff">${holdText}</b>
             </div>
             <div class="cex-metric-row" style="border-top:none;padding-top:2px;margin-top:2px;">
               <span>Giá trị dự trữ:</span>
-              <b style="color:var(--text-2)">${formatCompactUSD(hold * unitPrice)}</b>
+              <b style="color:var(--text-2)">${holdUsdText}</b>
             </div>
           </article>
         `;
@@ -3586,33 +3604,45 @@
 
     function renderCexDailyChartAndLedger(coin, unitPrice) {
       const targetEx = CEX_EXCHANGES.find(e => e.id === selectedExchangeId);
-      const scopeName = targetEx ? targetEx.name : 'Tất cả 8 sàn lớn (Hợp nhất)';
+      const loadedEx = CEX_EXCHANGES.filter(e => e.loaded);
+      const scopeName = targetEx ? targetEx.name : `Tất cả ${loadedEx.length} sàn đã tải (hợp nhất)`;
 
-      document.getElementById('cexChartTitle').textContent = `Biến động lượng ${coin} chuyển mỗi ngày — ${scopeName}`;
-      document.getElementById('cexLedgerTitle').textContent = `Nhật ký từng ngày (${coin} · ${targetEx ? targetEx.name : 'Toàn thị trường'})`;
+      document.getElementById('cexChartTitle').textContent = `Thay đổi dự trữ ròng ${coin} mỗi ngày — ${scopeName}`;
+      document.getElementById('cexLedgerTitle').textContent = `${coin} · ${targetEx ? targetEx.name : 'Tổng hợp'} · từng ngày`;
 
-      // Combine or pick daily series
+      // Chỉ dùng chuỗi tính từ snapshot thật của DefiLlama. Không nội suy, không sinh số.
       let combinedSeries = [];
       if (targetEx) {
-        combinedSeries = ensureExchangeDailySeries(targetEx, coin).map(d => ({
+        combinedSeries = cexSeriesFor(targetEx, coin).slice(-13).map(d => ({
           date: d.date,
+          iso: d.iso,
           diff: d.diff,
           exName: targetEx.name
         }));
       } else {
-        const baseSeries = ensureExchangeDailySeries(CEX_EXCHANGES[0], coin);
-        combinedSeries = baseSeries.map((item, idx) => {
-          let sum = 0;
-          CEX_EXCHANGES.forEach(ex => {
-            const s = ensureExchangeDailySeries(ex, coin);
-            const pt = s[idx] || s[s.length - 1];
-            if (pt) sum += pt.diff;
-          });
-          return { date: item.date, diff: sum, exName: '8 Sàn CEX' };
-        });
+        const byDay = new Map();
+        loadedEx.forEach(ex => cexSeriesFor(ex, coin).forEach(d => {
+          const cur = byDay.get(d.iso) || { date: d.date, iso: d.iso, diff: 0, exName: `${loadedEx.length} sàn` };
+          cur.diff += d.diff;
+          byDay.set(d.iso, cur);
+        }));
+        combinedSeries = Array.from(byDay.values()).sort((a, b) => a.iso.localeCompare(b.iso)).slice(-13);
       }
 
       const svg = document.getElementById('cexDailyBarChartSvg');
+      const tbody = document.getElementById('cexDailyLedgerBody');
+
+      if (!combinedSeries.length) {
+        const msg = CEX_STATE.ok === 0
+          ? 'Chưa tải được dữ liệu ví sàn từ DefiLlama'
+          : (targetEx && !targetEx.loaded
+              ? `${targetEx.name}: ${targetEx.error || 'đang tải…'}`
+              : `Chưa đủ lịch sử snapshot cho ${coin}`);
+        if (svg) svg.innerHTML = `<text x="360" y="100" text-anchor="middle" fill="#6e6e73" font-family="Inter, sans-serif" font-size="12.5">${msg}</text>`;
+        if (tbody) tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-3);padding:24px 8px;line-height:1.6;">Không có dữ liệu thật để hiển thị.<br>Trang không dùng số ước lượng thay thế.</td></tr>`;
+        return;
+      }
+
       const W = 720;
       const H = 195;
       const zeroY = 98;
@@ -3648,12 +3678,11 @@
       `;
 
       // Populate Right-Side Daily Ledger Table (most recent day first)
-      const tbody = document.getElementById('cexDailyLedgerBody');
       const reversed = [...combinedSeries].reverse();
       tbody.innerHTML = reversed.map(row => {
         const isInflow = row.diff >= 0;
         const color = isInflow ? '#ff6961' : 'var(--up)';
-        const dirTag = isInflow ? '▲ Nạp lên sàn' : '▼ Rút về ví';
+        const dirTag = isInflow ? '▲ Tăng dự trữ' : '▼ Giảm dự trữ';
         const usdVal = Math.abs(row.diff) * unitPrice;
         return `
           <tr>
@@ -3669,78 +3698,100 @@
       }).join('');
     }
 
-    // Fetch 100% Real On-Chain CEX Reserve History from DefiLlama API
+    // Chỉ đọc số thật từ DefiLlama. Không gán bất kỳ giá trị mặc định / ước lượng nào vào model.
     async function fetchDefiLlamaOnchainExchangeFlows() {
       const badge = document.getElementById('cexSyncBadge');
-      try {
-        await Promise.all(CEX_EXCHANGES.map(async (ex) => {
+      CEX_STATE.status = 'loading';
+      CEX_STATE.ok = 0;
+      CEX_STATE.failed = 0;
+      CEX_STATE.lastSnapshotTs = null;
+
+      const paintBadge = () => {
+        if (!badge) return;
+        badge.style.background = 'rgba(255,255,255,0.06)';
+        badge.style.color = 'var(--text-2)';
+        badge.style.borderColor = 'rgba(255,255,255,0.14)';
+        if (CEX_STATE.ok > 0) {
+          const stamp = CEX_STATE.lastSnapshotTs
+            ? new Date(CEX_STATE.lastSnapshotTs * 1000).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+            : '—';
+          badge.innerHTML = `● ${CEX_STATE.ok}/${CEX_EXCHANGES.length} sàn · snapshot ${stamp}${CEX_STATE.failed ? ` · ${CEX_STATE.failed} sàn lỗi` : ''}`;
+          badge.style.background = 'rgba(48,209,88,0.12)';
+          badge.style.color = 'var(--up)';
+          badge.style.borderColor = 'rgba(48,209,88,0.3)';
+        } else if (CEX_STATE.failed > 0) {
+          badge.innerHTML = '⚠ Không tải được DefiLlama — không hiển thị số ước lượng';
+          badge.style.background = 'rgba(255,159,10,0.12)';
+          badge.style.color = '#ff9f0a';
+          badge.style.borderColor = 'rgba(255,159,10,0.35)';
+        } else {
+          badge.textContent = '● Đang tải dữ liệu ví sàn…';
+        }
+      };
+      paintBadge();
+
+      await Promise.all(CEX_EXCHANGES.map(async (ex) => {
+          ex.loaded = false;
+          ex.error = null;
           try {
-            // Fetch primary slug for exchange
-            const slug = ex.slugs[0];
-            const res = await fetch(`https://api.llama.fi/protocol/${slug}`);
-            if (!res.ok) return;
+            const res = await fetch(`https://api.llama.fi/protocol/${ex.slug}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
             const tokensArr = data?.tokens;
-            if (!Array.isArray(tokensArr) || tokensArr.length < 15) return;
-
+            if (!Array.isArray(tokensArr) || tokensArr.length < 2) throw new Error('Không có chuỗi snapshot');
             const latest = tokensArr[tokensArr.length - 1];
-            const prev24h = tokensArr[tokensArr.length - 2];
-            const prev7d = tokensArr[Math.max(0, tokensArr.length - 8)];
-            const prev30d = tokensArr[Math.max(0, tokensArr.length - 31)];
+            if (!latest || !latest.tokens || typeof latest.date !== 'number') throw new Error('Snapshot cuối không hợp lệ');
 
-            const trackedCoins = ['BTC', 'ETH', 'SOL', 'USDT', 'XRP', 'BNB'];
-            trackedCoins.forEach(cSym => {
+            const holdings = {};
+            const flows = { '24h': {}, '7d': {}, '30d': {} };
+            const dailySeries = {};
+
+            // DefiLlama chèn thêm snapshot lẻ trong ngày, nên không thể lấy arr[length-2] rồi gọi là "24h".
+            // Các mốc 24h/7d/30d được neo vào snapshot chốt ngày 00:00 UTC để đúng 24h/7 ngày/30 ngày.
+            const midnightSnaps = tokensArr.filter(s => s && typeof s.date === 'number' && s.date % 86400 === 0 && s.tokens);
+            const anchor = midnightSnaps.length >= 2 ? midnightSnaps[midnightSnaps.length - 1] : latest;
+            const anchorPool = midnightSnaps.length >= 2 ? midnightSnaps : tokensArr;
+
+            CEX_TRACKED_COINS.forEach(cSym => {
               const nowQty = extractTokenQtyFromMap(latest.tokens, cSym);
-              const d24Qty = extractTokenQtyFromMap(prev24h.tokens, cSym);
-              const d7Qty  = extractTokenQtyFromMap(prev7d.tokens, cSym);
-              const d30Qty = extractTokenQtyFromMap(prev30d.tokens, cSym);
-
-              if (nowQty > 0) {
-                ex.holdings[cSym] = nowQty;
-                ex.flows['24h'][cSym] = nowQty - d24Qty;
-                ex.flows['7d'][cSym]  = nowQty - d7Qty;
-                ex.flows['30d'][cSym] = nowQty - d30Qty;
-
-                // Extract last 14 snapshots to compute 13 daily netflow bars
-                const slice14 = tokensArr.slice(-14);
-                const daily = [];
-                for (let i = 1; i < slice14.length; i++) {
-                  const curSnap = slice14[i];
-                  const prevSnap = slice14[i - 1];
-                  const dt = new Date(curSnap.date * 1000);
-                  const dateLabel = `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}`;
-                  const qCur = extractTokenQtyFromMap(curSnap.tokens, cSym);
-                  const qPrev = extractTokenQtyFromMap(prevSnap.tokens, cSym);
-                  daily.push({
-                    date: dateLabel,
-                    diff: qCur - qPrev
-                  });
-                }
-                if (!ex.dailySeries) ex.dailySeries = {};
-                ex.dailySeries[cSym] = daily;
-              }
+              holdings[cSym] = nowQty;
+              CEX_TIMEFRAMES.forEach(([key, hours]) => {
+                const past = cexSnapshotAtOrBefore(anchorPool, anchor.date - hours * 3600);
+                flows[key][cSym] = (past && past.date < anchor.date)
+                  ? extractTokenQtyFromMap(anchor.tokens, cSym) - extractTokenQtyFromMap(past.tokens, cSym)
+                  : null;
+              });
+              dailySeries[cSym] = cexDailyNetChangeSeries(tokensArr, cSym);
             });
 
-            if (latest?.date) {
-              const dt = new Date(latest.date * 1000);
-              const dateEl = document.getElementById('cexLastUpdatedDate');
-              if (dateEl) {
-                dateEl.textContent = `Snapshot On-Chain mới nhất: ${dt.toLocaleDateString('vi-VN')} (${dt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })})`;
-              }
-            }
-          } catch (innerErr) {}
+            ex.holdings = holdings;
+            ex.flows = flows;
+            ex.dailySeries = dailySeries;
+            ex.lastSnapshotTs = latest.date;
+            ex.loaded = true;
+            CEX_STATE.ok++;
+            CEX_STATE.lastSnapshotTs = Math.max(CEX_STATE.lastSnapshotTs || 0, latest.date);
+          } catch (err) {
+            ex.error = err?.message || 'Lỗi mạng';
+            ex.loaded = false;
+            CEX_STATE.failed++;
+          } finally {
+            paintBadge();
+            renderCexOnchainSection();
+          }
         }));
 
-        if (badge) {
-          badge.innerHTML = '● 100% LIVE ON-CHAIN (DEFILLAMA PoR)';
-          badge.style.color = 'var(--up)';
-        }
-        renderCexOnchainSection();
-      } catch (err) {
-        if (badge) {
-          badge.innerHTML = '● ON-CHAIN SNAPSHOT READY';
-        }
+      CEX_STATE.status = CEX_STATE.ok === 0 ? 'error' : (CEX_STATE.failed ? 'partial' : 'ok');
+      paintBadge();
+
+      const dateEl = document.getElementById('cexLastUpdatedDate');
+      if (dateEl) {
+        dateEl.textContent = CEX_STATE.lastSnapshotTs
+          ? `Snapshot DefiLlama mới nhất: ${new Date(CEX_STATE.lastSnapshotTs * 1000).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`
+          : 'Chưa có snapshot';
       }
+
+      renderCexOnchainSection();
     }
 
     // Bind CEX Coin Tabs & Timeframe Tabs
